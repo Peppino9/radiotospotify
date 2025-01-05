@@ -1,0 +1,90 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #1DB954, #191414);
+  color: #fff;
+  line-height: 1.6;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 600px;
+  background-color: #222;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+header h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #1DB954;
+  font-size: 2rem;
+}
+
+form.channel-selector {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+form.channel-selector label {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+form.channel-selector select {
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #333;
+  color: #fff;
+}
+
+form.channel-selector button {
+  margin-left: 10px;
+  padding: 10px 20px;
+  background-color: #1DB954;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+form.channel-selector button:hover {
+  background-color: #17a54a;
+}
+
+.song-info {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #333;
+  border-radius: 5px;
+}
+
+.song-info h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #1DB954;
+}
+
+.song-info p {
+  font-size: 1rem;
+  margin: 5px 0;
+}
+
+footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #ccc;
+}

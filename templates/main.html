@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Låtinformation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='body.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Låtinformation från Sveriges Radio</h1>
+        </header>
+
+        <main>
+            <form method="POST" class="channel-selector">
+                <label for="channel">Välj kanal:</label>
+                <select name="channel_id" id="channel">
+                    {% for channel in channels %}
+                        <option value="{{ channel.id }}" {% if channel.id == selected_channel_id %}selected{% endif %}>
+                            {{ channel.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Visa</button>
+            </form>
+
+            <div class="song-info">
+                <h2>Nuvarande låt</h2>
+                {% if song_info.current_song.title == "Ingen titel" %}
+                    <p>Ingen låt spelas just nu.</p>
+                {% else %}
+                    <p><strong>Titel:</strong> {{ song_info.current_song.title }}</p>
+                    <p><strong>Artist:</strong> {{ song_info.current_song.artist }}</p>
+                {% endif %}
+            </div>
+
+            <div class="song-info">
+                <h2>Föregående låt</h2>
+                {% if song_info.previous_song.title == "Ingen föregående låt" %}
+                    <p>Ingen information om föregående låt.</p>
+                {% else %}
+                    <p><strong>Titel:</strong> {{ song_info.previous_song.title }}</p>
+                    <p><strong>Artist:</strong> {{ song_info.previous_song.artist }}</p>
+                {% endif %}
+            </div>
+
+            <footer>
+                <p><strong>Kanal:</strong> {{ song_info.channel.name }}</p>
+            </footer>
+        </main>
+    </div>
+</body>
+</html>
