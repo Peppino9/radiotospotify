@@ -32,9 +32,14 @@
                 {% else %}
                     <p><strong>Titel:</strong> {{ song_info.current_song.title }}</p>
                     <p><strong>Artist:</strong> {{ song_info.current_song.artist }}</p>
+                    {% if song_info.current_song.spotify_url %}
+                        <p><a href="{{ song_info.current_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a></p>
+                    {% else %}
+                        <p>Ingen Spotify-länk hittades.</p>
+                    {% endif %}
                 {% endif %}
             </div>
-
+            
             <div class="song-info">
                 <h2>Föregående låt</h2>
                 {% if song_info.previous_song.title == "Ingen föregående låt" %}
@@ -42,9 +47,14 @@
                 {% else %}
                     <p><strong>Titel:</strong> {{ song_info.previous_song.title }}</p>
                     <p><strong>Artist:</strong> {{ song_info.previous_song.artist }}</p>
+                    {% if song_info.previous_song.spotify_url %}
+                        <p><a href="{{ song_info.previous_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a></p>
+                    {% else %}
+                        <p>Ingen Spotify-länk hittades.</p>
+                    {% endif %}
                 {% endif %}
             </div>
-
+            
             <footer>
                 <p><strong>Kanal:</strong> {{ song_info.channel.name }}</p>
             </footer>
