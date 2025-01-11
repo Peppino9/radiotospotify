@@ -32,11 +32,12 @@
                 {% else %}
                     <p><strong>Titel:</strong> {{ song_info.current_song.title }}</p>
                     <p><strong>Artist:</strong> {{ song_info.current_song.artist }}</p>
-                    {% if song_info.current_song.spotify_url %}
-                        <p><a href="{{ song_info.current_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a></p>
-                    {% else %}
-                        <p>Ingen Spotify-länk hittades.</p>
-                    {% endif %}
+                    <div class="button-container">
+                        {% if song_info.current_song.spotify_url %}
+                            <a href="{{ song_info.current_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a>
+                        {% endif %}
+                        <button class="playlist-button">Lägg till i spellista</button>
+                    </div>
                 {% endif %}
             </div>
             
@@ -47,11 +48,12 @@
                 {% else %}
                     <p><strong>Titel:</strong> {{ song_info.previous_song.title }}</p>
                     <p><strong>Artist:</strong> {{ song_info.previous_song.artist }}</p>
-                    {% if song_info.previous_song.spotify_url %}
-                        <p><a href="{{ song_info.previous_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a></p>
-                    {% else %}
-                        <p>Ingen Spotify-länk hittades.</p>
-                    {% endif %}
+                    <div class="button-container">
+                        {% if song_info.previous_song.spotify_url %}
+                            <a href="{{ song_info.previous_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a>
+                        {% endif %}
+                        <button class="playlist-button">Lägg till i spellista</button>
+                    </div>
                 {% endif %}
             </div>
             

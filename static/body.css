@@ -88,19 +88,32 @@ footer {
   font-size: 0.9rem;
   color: #ccc;
 }
-.spotify-link {
-  display: inline-block;
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 10px;
+}
+.spotify-link, .playlist-button {
+  display: inline-block;
+  text-align: center;
   padding: 10px 20px;
   background-color: #1DB954;
   color: #fff;
-  text-decoration: none;
+  border: none;
   border-radius: 5px;
   font-weight: bold;
+  text-decoration: none;
   transition: background-color 0.3s ease;
+  margin: 0 5px;
+  font-size: 1rem;
 }
 
-.spotify-link:hover {
+.spotify-link:hover, .playlist-button:hover {
   background-color: #17a54a;
+}
+
+.playlist-button {
+  cursor: pointer;
 }
 
