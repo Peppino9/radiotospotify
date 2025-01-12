@@ -32,7 +32,8 @@
                 {% else %}
                     <p><strong>Titel:</strong> {{ song_info.current_song.title }}</p>
                     <p><strong>Artist:</strong> {{ song_info.current_song.artist }}</p>
-                    
+                    <p><strong>Starttid:</strong> {{ song_info.current_song.start_time }}</p>
+
                     <div class="button-container">
                         {% if song_info.current_song.spotify_url %}
                             <a href="{{ song_info.current_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a>
@@ -53,6 +54,7 @@
                 {% else %}
                     <p><strong>Titel:</strong> {{ song_info.previous_song.title }}</p>
                     <p><strong>Artist:</strong> {{ song_info.previous_song.artist }}</p>
+                    <p><strong>Starttid:</strong> {{ song_info.previous_song.start_time }}</p>
                     <div class="button-container">
                         {% if song_info.previous_song.spotify_url %}
                             <a href="{{ song_info.previous_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a>

@@ -69,6 +69,7 @@ def home():
         current_song_title = current_song.find("title").text if current_song is not None and current_song.find("title") is not None else "Ingen titel"
         current_song_artist = current_song.find("artist").text if current_song is not None and current_song.find("artist") is not None else "Ingen artist"
         current_spotify_result = search_spotify(f"{current_song_title} {current_song_artist}")
+        current_song_start_time = current_song.find("starttimeutc").text if current_song is not None and current_song.find("starttimeutc") is not None else "Okänd tid"
         current_spotify_url = current_spotify_result["spotify_url"] if current_spotify_result else None
         current_artist_spotify_url = search_spotify_artist(current_song_artist)
 
@@ -76,8 +77,10 @@ def home():
         previous_song = root.find(".//previoussong")
         previous_song_title = previous_song.find("title").text if previous_song is not None and previous_song.find("title") is not None else "Ingen föregående låt"
         previous_song_artist = previous_song.find("artist").text if previous_song is not None and previous_song.find("artist") is not None else "Ingen artist"
+        previous_song_start_time = previous_song.find("starttimeutc").text if previous_song is not None and previous_song.find("starttimeutc") is not None else "Okänd tid"
         previous_spotify_result = search_spotify(f"{previous_song_title} {previous_song_artist}")
         previous_spotify_url = previous_spotify_result["spotify_url"] if previous_spotify_result else None
+        previous_artist_spotify_url = search_spotify_artist(previous_song_artist)
 
         # Samla information om låtar och kanal
         song_info = {
@@ -85,13 +88,16 @@ def home():
                 "title": current_song_title,
                 "artist": current_song_artist,
                 "spotify_url": current_spotify_url,
+                "start_time": current_song_start_time,
                 "artist_spotify_url": current_artist_spotify_url
                 
             },
             "previous_song": {
                 "title": previous_song_title,
                 "artist": previous_song_artist,
-                "spotify_url": previous_spotify_url
+                "spotify_url": previous_spotify_url,
+                "start_time": previous_song_start_time,
+                "artist_spotify_url": previous_artist_spotify_url
             },
             "channel": {
                 "id": selected_channel_id,
