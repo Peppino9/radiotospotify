@@ -57,6 +57,9 @@
                         {% if song_info.previous_song.spotify_url %}
                             <a href="{{ song_info.previous_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a>
                         {% endif %}
+                        {% if song_info.previous_song.artist_spotify_url %}
+                        <a href="{{ song_info.previous_song.artist_spotify_url }}" class="spotify-link" target="_blank">Visa artist på Spotify</a>
+                        {% endif %}
                         <button class="playlist-button">Lägg till i spellista</button>
                     </div>
                 {% endif %}
