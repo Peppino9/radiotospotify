@@ -32,11 +32,16 @@
                 {% else %}
                     <p><strong>Titel:</strong> {{ song_info.current_song.title }}</p>
                     <p><strong>Artist:</strong> {{ song_info.current_song.artist }}</p>
+                    
                     <div class="button-container">
                         {% if song_info.current_song.spotify_url %}
                             <a href="{{ song_info.current_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a>
                         {% endif %}
-                        <button class="playlist-button">Lägg till i spellista</button>
+                        {% if song_info.current_song.artist_spotify_url %}
+                            <a href="{{ song_info.current_song.artist_spotify_url }}" class="spotify-link" target="_blank">Visa artist på Spotify</a>
+                            {% endif %}
+                            <button class="playlist-button">Lägg till i spellista</button>
+
                     </div>
                 {% endif %}
             </div>

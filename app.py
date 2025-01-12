@@ -42,6 +42,16 @@ def search_spotify(query):
         print(f"Fel vid Spotify-sökning: {e}")
     return None
 
+def search_spotify_artist(artist_name):
+    try:
+        results = spotify_client.search(q=f"artist:{artist_name}", type="artist", limit=1)
+        if results['artists']['items']:
+            artist = results['artists']['items'][0]
+            return artist["external_urls"]["spotify"]
+    except Exception as e:
+        print(f"Error searching Spotify for artist: {e}")
+    return None
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
     try:
@@ -60,6 +70,7 @@ def home():
         current_song_artist = current_song.find("artist").text if current_song is not None and current_song.find("artist") is not None else "Ingen artist"
         current_spotify_result = search_spotify(f"{current_song_title} {current_song_artist}")
         current_spotify_url = current_spotify_result["spotify_url"] if current_spotify_result else None
+        current_artist_spotify_url = search_spotify_artist(current_song_artist)
 
         # Föregående låt
         previous_song = root.find(".//previoussong")
@@ -73,7 +84,9 @@ def home():
             "current_song": {
                 "title": current_song_title,
                 "artist": current_song_artist,
-                "spotify_url": current_spotify_url
+                "spotify_url": current_spotify_url,
+                "artist_spotify_url": current_artist_spotify_url
+                
             },
             "previous_song": {
                 "title": previous_song_title,
