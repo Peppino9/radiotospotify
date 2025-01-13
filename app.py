@@ -28,6 +28,7 @@ CHANNELS = [
     {"id": "2576", "name": "Din Gata"}
 ]
 
+# Söker efter en låt baserat på titel i Spotify
 def search_spotify(query):
     try:
         results = spotify_client.search(q=query, type="track", limit=1)
@@ -42,6 +43,7 @@ def search_spotify(query):
         print(f"Fel vid Spotify-sökning: {e}")
     return None
 
+# Söker efter en låt baserat på artist i Spotify
 def search_spotify_artist(artist_name):
     try:
         results = spotify_client.search(q=f"artist:{artist_name}", type="artist", limit=1)
