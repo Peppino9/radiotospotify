@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, redirect, url_for, request
 import requests
 import xml.etree.ElementTree as ET
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
+import os
 
 app = Flask(__name__)
 app.secret_key = "secretdeluxe"
@@ -31,6 +32,28 @@ CHANNELS = [
     {"id": "164", "name": "P3"},
     {"id": "2576", "name": "Din Gata"}
 ]
+
+# Login
+@app.route('/login')
+def login():
+    auth_url = sp_oauth.get_authorize_url() + "&show_dialog=True"  #fresh login
+    return redirect(auth_url)
+# Log Out - clear session
+@app.route('/logout')
+def logout():
+    session.clear() 
+    try:
+        os.remove(".cache")
+    except FileNotFoundError:
+        pass
+    return redirect(url_for('home'))
+
+@app.route('/callback')
+def callback():
+    code = request.args.get("code")
+    token_info = sp_oauth.get_access_token(code)
+    session["token_info"] = token_info
+    return redirect(url_for("home"))
 
 # Söker efter en låt baserat på titel i Spotify
 def search_spotify(query):

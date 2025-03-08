@@ -10,6 +10,8 @@
     <div class="container">
         <header>
             <h1>Låtinformation från Sveriges Radio</h1>
+            <button id="login-button">Logga in med Spotify</button>
+            <button id="logout-button">Logga ut</button>
         </header>
 
         <main>
@@ -70,5 +72,14 @@
             </footer>
         </main>
     </div>
+    <script>
+        document.getElementById("login-button").addEventListener("click", function() {
+        window.location.href = "/login";
+});
+
+        document.getElementById("logout-button").addEventListener("click", function() {
+        window.location.href = "/logout";
+});
+    </script>
 </body>
 </html>
