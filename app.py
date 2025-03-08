@@ -1,21 +1,25 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 import requests
 import xml.etree.ElementTree as ET
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 
 app = Flask(__name__)
+app.secret_key = "secretdeluxe"
 
 # Spotify API
 SPOTIFY_CLIENT_ID = "Add_Client-ID"
 SPOTIFY_CLIENT_SECRET = "Add_Client-Secret"
 
-# Skapa Spotify-klient
-spotify_auth = SpotifyClientCredentials(
+SPOTIFY_REDIRECT_URI = "http://127.0.0.1:5000/callback"
+SCOPE = "playlist-modify-public playlist-modify-private user-read-private user-top-read user-read-email"
+
+sp_oauth = SpotifyOAuth(
     client_id=SPOTIFY_CLIENT_ID,
-    client_secret=SPOTIFY_CLIENT_SECRET
+    client_secret=SPOTIFY_CLIENT_SECRET,
+    redirect_uri=SPOTIFY_REDIRECT_URI,
+    scope=SCOPE
 )
-spotify_client = spotipy.Spotify(auth_manager=spotify_auth)
 
 # Sveriges Radios API
 PLAYLIST_API_URL = "http://api.sr.se/api/v2/playlists/rightnow?channelid={channel_id}"
