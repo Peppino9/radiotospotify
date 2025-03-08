@@ -10,6 +10,10 @@
     <div class="container">
         <header>
             <h1>Låtinformation från Sveriges Radio</h1>
+            <div id="user-info">
+                <img id="user-image" src="" alt="Profilbild">
+                <p id="user-name"></p>
+            </div>
             <button id="login-button">Logga in med Spotify</button>
             <button id="logout-button">Logga ut</button>
         </header>
@@ -80,6 +84,22 @@
         document.getElementById("logout-button").addEventListener("click", function() {
         window.location.href = "/logout";
 });
+
+    function fetchUserProfile() {
+        fetch("/user-profile")
+        .then(response => response.json())
+        .then(user => {
+            if (user.authenticated) {
+                document.getElementById("user-info").style.display = "block";
+                document.getElementById("user-name").innerText = user.name;
+                document.getElementById("logout-button").style.display = "inline-block";
+                document.getElementById("login-button").style.display = "none";
+                document.getElementById("user-image").src = user.image || "/static/default-profile.png";
+            }
+        });
+    }
+
+    fetchUserProfile();
     </script>
 </body>
 </html>

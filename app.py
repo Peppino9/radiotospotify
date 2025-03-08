@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, redirect, url_for, request
+from flask import Flask, render_template, request, session, redirect, url_for, request, jsonify
 import requests
 import xml.etree.ElementTree as ET
 import spotipy
@@ -54,6 +54,21 @@ def callback():
     token_info = sp_oauth.get_access_token(code)
     session["token_info"] = token_info
     return redirect(url_for("home"))
+
+@app.route('/user-profile')
+def user_profile():
+    token_info = session.get("token_info")
+    if not token_info:
+        return jsonify({"authenticated": False})
+
+    spotify = spotipy.Spotify(auth=token_info["access_token"])
+    user_info = spotify.me()
+
+    return jsonify({
+        "authenticated": True,
+        "name": user_info["display_name"],
+        "image": user_info["images"][0]["url"] if user_info.get("images") else None
+    })
 
 # Söker efter en låt baserat på titel i Spotify
 def search_spotify(query):
