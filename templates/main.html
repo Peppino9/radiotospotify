@@ -69,6 +69,7 @@
                         {% endif %}
                     </div>
                 {% endif %}
+                <select id="playlist-selector"></select> 
             </div>
             
             <footer>
@@ -100,6 +101,24 @@
     }
 
     fetchUserProfile();
+
+    function fetchPlaylists() {
+    fetch("/user-playlists")
+    .then(response => response.json())
+    .then(playlists => {
+        let selector = document.getElementById("playlist-selector");
+        selector.innerHTML = "";  
+        playlists.forEach(playlist => {
+            let option = document.createElement("option");
+            option.value = playlist.id;
+            option.textContent = playlist.name;
+            selector.appendChild(option);
+        });
+    });
+}
+
+fetchPlaylists();
+    
     </script>
 </body>
 </html>

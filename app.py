@@ -57,23 +57,44 @@ def callback():
 
 @app.route('/user-profile')
 def user_profile():
+    user = session.get("user", {})
+    if not user:
+        return jsonify({"authenticated": False})
+    return jsonify({**user, "authenticated": True})
+
+def get_spotify_client():
     token_info = session.get("token_info")
     if not token_info:
-        return jsonify({"authenticated": False})
+        return None
 
-    spotify = spotipy.Spotify(auth=token_info["access_token"])
-    user_info = spotify.me()
+    # If user logged out, prevent using old token
+    if not session.get("user"):
+        return None
 
-    return jsonify({
-        "authenticated": True,
-        "name": user_info["display_name"],
-        "image": user_info["images"][0]["url"] if user_info.get("images") else None
-    })
+    if sp_oauth.is_token_expired(token_info):
+        try:
+            token_info = sp_oauth.refresh_access_token(token_info["refresh_token"])
+            session["token_info"] = token_info
+        except Exception as e:
+            print(f"Error refreshing token: {e}")
+            session.clear()
+            return None
 
+    return spotipy.Spotify(auth=token_info["access_token"])
+
+
+#  Hämtar & visar användarens spellista
+@app.route('/user-playlists')
+def user_playlists():
+    spotify = get_spotify_client()
+    if not spotify:
+        return jsonify([])
+    playlists = spotify.current_user_playlists()
+    return jsonify(playlists["items"])
 # Söker efter en låt baserat på titel i Spotify
 def search_spotify(query):
     try:
-        results = spotify_client.search(q=query, type="track", limit=1)
+        results = get_spotify_client.search(q=query, type="track", limit=1)
         if results['tracks']['items']:
             track = results['tracks']['items'][0]
             return {
@@ -88,7 +109,7 @@ def search_spotify(query):
 # Söker efter en låt baserat på artist i Spotify
 def search_spotify_artist(artist_name):
     try:
-        results = spotify_client.search(q=f"artist:{artist_name}", type="artist", limit=1)
+        results = get_spotify_client.search(q=f"artist:{artist_name}", type="artist", limit=1)
         if results['artists']['items']:
             artist = results['artists']['items'][0]
             return artist["external_urls"]["spotify"]
