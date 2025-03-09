@@ -69,7 +69,8 @@
                         {% endif %}
                     </div>
                 {% endif %}
-                <select id="playlist-selector"></select> 
+                <select id="playlist-selector"></select>
+                <button id="add-to-playlist">Lägg till i spellista</button>
             </div>
             
             <footer>
@@ -100,8 +101,6 @@
         });
     }
 
-    fetchUserProfile();
-
     function fetchPlaylists() {
     fetch("/user-playlists")
     .then(response => response.json())
@@ -117,8 +116,19 @@
     });
 }
 
-fetchPlaylists();
-    
+    document.getElementById("add-to-playlist").addEventListener("click", function() {
+        let songUri = document.getElementById("view-song-spotify").dataset.uri;
+        let playlistId = document.getElementById("playlist-selector").value;
+
+        fetch("/add-to-playlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ song_uri: songUri, playlist_id: playlistId })
+        }).then(response => response.json())
+        .then(data => alert(data.message || data.error));
+    });
+
+    fetchUserProfile();    
     </script>
 </body>
 </html>

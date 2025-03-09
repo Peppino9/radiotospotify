@@ -67,7 +67,6 @@ def get_spotify_client():
     if not token_info:
         return None
 
-    # If user logged out, prevent using old token
     if not session.get("user"):
         return None
 
@@ -105,6 +104,27 @@ def search_spotify(query):
     except Exception as e:
         print(f"Fel vid Spotify-sökning: {e}")
     return None
+
+# Lägger till låt i användares spellistor
+@app.route('/add-to-playlist', methods=['POST'])
+def add_to_playlist():
+    spotify = get_spotify_client()
+    if not spotify:
+        return jsonify({"error": "User not authenticated"}), 401
+
+    data = request.json
+    track_uri = data.get("song_uri") 
+    playlist_id = data.get("playlist_id")
+
+    if not track_uri or not playlist_id:
+        return jsonify({"error": "Missing song URI or playlist ID"}), 400
+
+    try:
+        spotify.playlist_add_items(playlist_id, [track_uri])
+        return jsonify({"message": "Song added to playlist!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # Söker efter en låt baserat på artist i Spotify
 def search_spotify_artist(artist_name):
