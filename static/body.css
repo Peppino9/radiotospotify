@@ -13,6 +13,7 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  text-align: center;
 }
 
 .container {
@@ -30,15 +31,35 @@ header h1 {
   font-size: 2rem;
 }
 
-form.channel-selector {
-  margin-bottom: 20px;
-  text-align: center;
+#user-info {
+  display: none;
+  margin-bottom: 15px;
 }
 
-form.channel-selector label {
-  font-size: 1rem;
+#user-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #1DB954;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
   font-weight: bold;
-  margin-right: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin: 5px;
+}
+
+button:hover {
+  background-color: #17a54a;
+}
+
+form.channel-selector {
+  margin-bottom: 20px;
 }
 
 form.channel-selector select {
@@ -49,51 +70,21 @@ form.channel-selector select {
   color: #fff;
 }
 
-form.channel-selector button {
-  margin-left: 10px;
-  padding: 10px 20px;
-  background-color: #1DB954;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-form.channel-selector button:hover {
-  background-color: #17a54a;
-}
-
 .song-info {
-  margin: 20px 0;
   padding: 15px;
   background-color: #333;
   border-radius: 5px;
+  margin: 20px 0;
 }
 
 .song-info h2 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
   color: #1DB954;
 }
 
 .song-info p {
   font-size: 1rem;
-  margin: 5px 0;
 }
 
-footer {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 0.9rem;
-  color: #ccc;
-}
-.button-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-}
 .spotify-link, .playlist-button {
   display: inline-block;
   text-align: center;
@@ -102,18 +93,11 @@ footer {
   color: #fff;
   border: none;
   border-radius: 5px;
-  font-weight: bold;
   text-decoration: none;
   transition: background-color 0.3s ease;
-  margin: 0 5px;
   font-size: 1rem;
 }
 
 .spotify-link:hover, .playlist-button:hover {
   background-color: #17a54a;
 }
-
-.playlist-button {
-  cursor: pointer;
-}
-

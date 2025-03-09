@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, r
 import requests
 import xml.etree.ElementTree as ET
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
+from spotipy.oauth2 import SpotifyOAuth
 import os
 
 app = Flask(__name__)

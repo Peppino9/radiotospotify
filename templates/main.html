@@ -65,6 +65,7 @@
                 document.getElementById("logout-button").style.display = "inline-block";
                 document.getElementById("login-button").style.display = "none";
                 document.getElementById("user-image").src = user.image || "/static/default-profile.png";
+                fetchPlaylists();
             }
         });
     }
@@ -101,6 +102,12 @@ function fetchSong(channelId) {
             artistButton.onclick = () => window.open(data.artist_url, "_blank");
         });
     }
+    document.getElementById("channel-form").addEventListener("submit", function(event) {
+        event.preventDefault();
+        let selectedChannel = document.getElementById("channel").value;
+        fetchSong(selectedChannel);
+    });
+
 
     document.getElementById("add-to-playlist").addEventListener("click", function() {
         let songUri = document.getElementById("view-song-spotify").dataset.uri;
