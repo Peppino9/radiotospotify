@@ -33,6 +33,10 @@ CHANNELS = [
     {"id": "2576", "name": "Din Gata"}
 ]
 
+@app.route('/')
+def home():
+    return render_template("main.html", channels=CHANNELS)
+
 # Login
 @app.route('/login')
 def login():
@@ -53,6 +57,14 @@ def callback():
     code = request.args.get("code")
     token_info = sp_oauth.get_access_token(code)
     session["token_info"] = token_info
+
+    spotify = spotipy.Spotify(auth=token_info["access_token"])
+    user_info = spotify.me()
+    
+    session["user"] = {
+        "name": user_info["display_name"],
+        "image": user_info["images"][0]["url"] if user_info.get("images") else None
+    }
     return redirect(url_for("home"))
 
 @app.route('/user-profile')
