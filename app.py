@@ -10,7 +10,7 @@ app.secret_key = "secretdeluxe"
 
 # Spotify API
 SPOTIFY_CLIENT_ID = "Add_Client-ID"
-SPOTIFY_CLIENT_SECRET = "Add_Client-Secret"
+SPOTIFY_CLIENT_ID = "c214a3e3850c4821899be00e77de846c" 
 
 SPOTIFY_REDIRECT_URI = "http://127.0.0.1:5000/callback"
 SCOPE = "playlist-modify-public playlist-modify-private user-read-private user-top-read user-read-email"
