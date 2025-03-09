@@ -102,20 +102,6 @@ def user_playlists():
         return jsonify([])
     playlists = spotify.current_user_playlists()
     return jsonify(playlists["items"])
-# Söker efter en låt baserat på titel i Spotify
-def search_spotify(query):
-    try:
-        results = get_spotify_client.search(q=query, type="track", limit=1)
-        if results['tracks']['items']:
-            track = results['tracks']['items'][0]
-            return {
-                "spotify_url": track["external_urls"]["spotify"],
-                "song_name": track["name"],
-                "artist_name": track["artists"][0]["name"]
-            }
-    except Exception as e:
-        print(f"Fel vid Spotify-sökning: {e}")
-    return None
 
 # Lägger till låt i användares spellistor
 @app.route('/add-to-playlist', methods=['POST'])
