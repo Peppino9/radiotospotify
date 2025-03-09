@@ -137,17 +137,31 @@ def add_to_playlist():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# Söker efter en låt baserat på artist i Spotify
-def search_spotify_artist(artist_name):
+# Hämtar spelad låt från Sveriges Radio
+@app.route('/current-song/<channel_id>')
+def current_song(channel_id):
     try:
-        results = get_spotify_client.search(q=f"artist:{artist_name}", type="artist", limit=1)
-        if results['artists']['items']:
-            artist = results['artists']['items'][0]
-            return artist["external_urls"]["spotify"]
+        response = requests.get(PLAYLIST_API_URL.format(channel_id=channel_id))
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch song data"}), 500
+
+        root = ET.fromstring(response.content)
+        song_title = root.find(".//song/title")
+        artist_name = root.find(".//song/artist")
+
+        if song_title is None or artist_name is None:
+            return jsonify({"error": "No song found"}), 404
+
+        song_title = song_title.text if song_title.text else "Ingen titel"
+        artist_name = artist_name.text if artist_name.text else "Ingen artist"
+
     except Exception as e:
-        print(f"Error searching Spotify for artist: {e}")
-    return None
+        return jsonify({"error": f"Error processing request: {str(e)}"}), 500
+
+    return jsonify({
+        "title": song_title,
+        "artist": artist_name
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)

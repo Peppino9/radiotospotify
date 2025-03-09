@@ -30,52 +30,20 @@
                 </select>
                 <button type="submit">Visa</button>
             </form>
-
-            <div class="song-info">
-                <h2>Nuvarande låt</h2>
-                {% if song_info.current_song.title == "Ingen titel" %}
-                    <p>Ingen låt spelas just nu.</p>
-                {% else %}
-                    <p><strong>Titel:</strong> {{ song_info.current_song.title }}</p>
-                    <p><strong>Artist:</strong> {{ song_info.current_song.artist }}</p>
-                    <p><strong>Starttid:</strong> {{ song_info.current_song.start_time }}</p>
-
-                    <div class="button-container">
-                        {% if song_info.current_song.spotify_url %}
-                            <a href="{{ song_info.current_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a>
-                        {% endif %}
-                        {% if song_info.current_song.artist_spotify_url %}
-                            <a href="{{ song_info.current_song.artist_spotify_url }}" class="spotify-link" target="_blank">Visa artist på Spotify</a>
-                            {% endif %}
-
-                    </div>
-                {% endif %}
-            </div>
             
-            <div class="song-info">
-                <h2>Föregående låt</h2>
-                {% if song_info.previous_song.title == "Ingen föregående låt" %}
-                    <p>Ingen information om föregående låt.</p>
-                {% else %}
-                    <p><strong>Titel:</strong> {{ song_info.previous_song.title }}</p>
-                    <p><strong>Artist:</strong> {{ song_info.previous_song.artist }}</p>
-                    <p><strong>Starttid:</strong> {{ song_info.previous_song.start_time }}</p>
-                    <div class="button-container">
-                        {% if song_info.previous_song.spotify_url %}
-                            <a href="{{ song_info.previous_song.spotify_url }}" class="spotify-link" target="_blank">Lyssna på Spotify</a>
-                        {% endif %}
-                        {% if song_info.previous_song.artist_spotify_url %}
-                        <a href="{{ song_info.previous_song.artist_spotify_url }}" class="spotify-link" target="_blank">Visa artist på Spotify</a>
-                        {% endif %}
-                    </div>
-                {% endif %}
-                <select id="playlist-selector"></select>
+            <div id="song-info" class="song-info">
+                <h2>Nuvarande låt</h2>
+                <p id="current-song-title"><strong>Titel:</strong> Ingen titel</p>
+                <p id="current-song-artist"><strong>Artist:</strong> Ingen artist</p>
+                <button id="view-song-spotify">Visa låt på Spotify</button>
+                <button id="view-artist-spotify">Visa artist på Spotify</button>
+            </div>
+
+            <div id="pick-playlist">
+                <h2>Lägg till i din Spotify spellista</h2>
+                <select id="playlist-selector"></select> 
                 <button id="add-to-playlist">Lägg till i spellista</button>
             </div>
-            
-            <footer>
-                <p><strong>Kanal:</strong> {{ song_info.channel.name }}</p>
-            </footer>
         </main>
     </div>
     <script>
@@ -115,6 +83,24 @@
         });
     });
 }
+
+function fetchSong(channelId) {
+        fetch(`/current-song/${channelId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("current-song-title").innerHTML = `<strong>Titel:</strong> ${data.title}`;
+            document.getElementById("current-song-artist").innerHTML = `<strong>Artist:</strong> ${data.artist}`;
+
+            let songButton = document.getElementById("view-song-spotify");
+            let artistButton = document.getElementById("view-artist-spotify");
+
+            songButton.style.display = data.song_url ? "block" : "none";
+            songButton.onclick = () => window.open(data.song_url, "_blank");
+
+            artistButton.style.display = data.artist_url ? "block" : "none";
+            artistButton.onclick = () => window.open(data.artist_url, "_blank");
+        });
+    }
 
     document.getElementById("add-to-playlist").addEventListener("click", function() {
         let songUri = document.getElementById("view-song-spotify").dataset.uri;
