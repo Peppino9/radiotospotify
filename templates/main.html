@@ -33,9 +33,9 @@
                 <h2>Nuvarande låt</h2>
                 <p id="current-song-title"><strong>Titel:</strong> Ingen titel</p>
                 <p id="current-song-artist"><strong>Artist:</strong> Ingen artist</p>
-                <button id="view-song-spotify" style="display:none;">Visa låt på Spotify</button>
-                <button id="view-artist-spotify" style="display:none;">Visa artist på Spotify</button>
-            </div>
+                <a id="view-song-spotify" class="spotify-link" target="_blank" style="display:none;">Lyssna på Spotify</a>
+            </div>            
+            
 
             <div id="pick-playlist">
                 <h2>Lägg till i din Spotify spellista</h2>
@@ -85,41 +85,54 @@
     }
 
     function fetchSong(channelId) {
-        fetch(`/current-song/${channelId}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("current-song-title").innerHTML = `<strong>Titel:</strong> ${data.title}`;
-            document.getElementById("current-song-artist").innerHTML = `<strong>Artist:</strong> ${data.artist}`;
+    fetch(`/current-song/${channelId}`)
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("current-song-title").innerHTML = `<strong>Titel:</strong> ${data.title}`;
+        document.getElementById("current-song-artist").innerHTML = `<strong>Artist:</strong> ${data.artist}`;
 
-            let songButton = document.getElementById("view-song-spotify");
-            let artistButton = document.getElementById("view-artist-spotify");
+        let songLink = document.getElementById("view-song-spotify");
+        if (data.song_url) {
+            songLink.style.display = "inline-block";
+            songLink.href = data.song_url;
+            songLink.dataset.uri = data.song_url;
+        } else {
+            songLink.style.display = "none";
+        }
+    })
+    .catch(error => console.error("Error fetching song:", error));
+}
 
-            songButton.style.display = data.song_url ? "block" : "none";
-            songButton.onclick = () => window.open(data.song_url, "_blank");
 
-            artistButton.style.display = data.artist_url ? "block" : "none";
-            artistButton.onclick = () => window.open(data.artist_url, "_blank");
-        });
+document.getElementById("channel-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    let selectedChannel = document.getElementById("channel").value;
+    fetchSong(selectedChannel);
+});
+
+document.getElementById("add-to-playlist").addEventListener("click", function() {
+    let songElement = document.getElementById("view-song-spotify");
+    let songUri = songElement.dataset.uri;
+    let playlistId = document.getElementById("playlist-selector").value;
+
+    if (!songUri || songUri === "undefined") {  
+        alert("Ingen låt vald eller hittades inte på Spotify!");
+        return;
     }
-    
+    if (!playlistId) {
+        alert("Ingen spellista vald!");
+        return;
+    }
 
-    document.getElementById("channel-form").addEventListener("submit", function(event) {
-        event.preventDefault();
-        let selectedChannel = document.getElementById("channel").value;
-        fetchSong(selectedChannel);
-    });
+    fetch("/add-to-playlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ song_uri: songUri, playlist_id: playlistId })
+    }).then(response => response.json())
+    .then(data => alert(data.message || data.error));
+});
 
-    document.getElementById("add-to-playlist").addEventListener("click", function() {
-        let songUri = document.getElementById("view-song-spotify").dataset.uri;
-        let playlistId = document.getElementById("playlist-selector").value;
 
-        fetch("/add-to-playlist", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ song_uri: songUri, playlist_id: playlistId })
-        }).then(response => response.json())
-        .then(data => alert(data.message || data.error));
-    });
 
     fetchUserProfile();
     </script>

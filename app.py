@@ -44,6 +44,7 @@ def home():
 def login():
     auth_url = sp_oauth.get_authorize_url() + "&show_dialog=True"  #fresh login
     return redirect(auth_url)
+
 # Log Out - clear session
 @app.route('/logout')
 def logout():
@@ -113,17 +114,32 @@ def add_to_playlist():
         return jsonify({"error": "User not authenticated"}), 401
 
     data = request.json
-    track_uri = data.get("song_uri") 
+    track_uri = data.get("song_uri")
     playlist_id = data.get("playlist_id")
 
     if not track_uri or not playlist_id:
         return jsonify({"error": "Missing song URI or playlist ID"}), 400
-
     try:
         spotify.playlist_add_items(playlist_id, [track_uri])
         return jsonify({"message": "Song added to playlist!"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+def search_spotify(query):
+    spotify = get_spotify_client()
+    if not spotify:
+        return None
+
+    result = spotify.search(q=query, type="track", limit=1)
+    tracks = result.get("tracks", {}).get("items", [])
+
+    if not tracks:
+        return None
+
+    song_uri = tracks[0]["uri"]
+    song_url = f"https://open.spotify.com/track/{song_uri.split(':')[-1]}"
+
+    return {"spotify_url": song_url}
 
 # Hämtar spelad låt från Sveriges Radio
 @app.route('/current-song/<channel_id>')
@@ -134,21 +150,21 @@ def current_song(channel_id):
             return jsonify({"error": "Failed to fetch song data"}), 500
 
         root = ET.fromstring(response.content)
-        song_title = root.find(".//song/title")
-        artist_name = root.find(".//song/artist")
-
-        if song_title is None or artist_name is None:
-            return jsonify({"error": "No song found"}), 404
-
-        song_title = song_title.text if song_title.text else "Ingen titel"
-        artist_name = artist_name.text if artist_name.text else "Ingen artist"
+        
+        # Nuvarande låt
+        current_song = root.find(".//song")
+        current_song_title = current_song.find("title").text if current_song is not None and current_song.find("title") is not None else "Ingen titel"
+        current_song_artist = current_song.find("artist").text if current_song is not None and current_song.find("artist") is not None else "Ingen artist"
+        current_spotify_result = search_spotify(f"{current_song_title} {current_song_artist}")
+        current_spotify_url = current_spotify_result["spotify_url"] if current_spotify_result else None
 
     except Exception as e:
         return jsonify({"error": f"Error processing request: {str(e)}"}), 500
 
     return jsonify({
-        "title": song_title,
-        "artist": artist_name
+        "title": current_song_title,
+        "artist": current_song_artist,
+        "song_url": current_spotify_url
     })
 
 if __name__ == '__main__':
