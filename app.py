@@ -9,8 +9,8 @@ app = Flask(__name__)
 app.secret_key = "secretdeluxe"
 
 # Spotify API
-SPOTIFY_CLIENT_ID = "c214a3e3850c4821899be00e77de846c"
-SPOTIFY_CLIENT_SECRET = "21a60d4f736d4f00aa434c4375e7ba37"
+SPOTIFY_CLIENT_ID = "Add_Client-ID"
+SPOTIFY_CLIENT_SECRET = "Add_Client_Secret"
 
 
 
