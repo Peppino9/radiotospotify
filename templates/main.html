@@ -34,8 +34,7 @@
                 <p id="current-song-title"><strong>Titel:</strong> Ingen titel</p>
                 <p id="current-song-artist"><strong>Artist:</strong> Ingen artist</p>
                 <a id="view-song-spotify" class="spotify-link" target="_blank" style="display:none;">Lyssna på Spotify</a>
-            </div>            
-            
+            </div>
 
             <div id="pick-playlist">
                 <h2>Lägg till i din Spotify spellista</h2>
@@ -45,17 +44,19 @@
         </main>
     </div>
 
+    <form id="login-form" method="POST" action="/sessions" style="display: none;"></form>
+
     <script>
     document.getElementById("login-button").addEventListener("click", function() {
-        window.location.href = "/login";
+        document.getElementById("login-form").submit();
     });
 
     document.getElementById("logout-button").addEventListener("click", function() {
-        window.location.href = "/logout";
+        fetch("/sessions", { method: "DELETE" }).then(() => location.reload());
     });
 
     function fetchUserProfile() {
-        fetch("/user-profile")
+        fetch("/users/me")
         .then(response => response.json())
         .then(user => {
             if (user.authenticated) {
@@ -70,11 +71,11 @@
     }
 
     function fetchPlaylists() {
-        fetch("/user-playlists")
+        fetch("/users/me/playlists")
         .then(response => response.json())
         .then(playlists => {
             let selector = document.getElementById("playlist-selector");
-            selector.innerHTML = "";  
+            selector.innerHTML = "";
             playlists.forEach(playlist => {
                 let option = document.createElement("option");
                 option.value = playlist.id;
@@ -85,54 +86,51 @@
     }
 
     function fetchSong(channelId) {
-    fetch(`/current-song/${channelId}`)
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById("current-song-title").innerHTML = `<strong>Titel:</strong> ${data.title}`;
-        document.getElementById("current-song-artist").innerHTML = `<strong>Artist:</strong> ${data.artist}`;
+        fetch(`/channels/${channelId}/current-song`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("current-song-title").innerHTML = `<strong>Titel:</strong> ${data.title}`;
+            document.getElementById("current-song-artist").innerHTML = `<strong>Artist:</strong> ${data.artist}`;
+            let songLink = document.getElementById("view-song-spotify");
+            if (data.song_url) {
+                songLink.style.display = "inline-block";
+                songLink.href = data.song_url;
+                songLink.dataset.uri = data.song_url;
+            } else {
+                songLink.style.display = "none";
+            }
+        });
+    }
 
-        let songLink = document.getElementById("view-song-spotify");
-        if (data.song_url) {
-            songLink.style.display = "inline-block";
-            songLink.href = data.song_url;
-            songLink.dataset.uri = data.song_url;
-        } else {
-            songLink.style.display = "none";
+    document.getElementById("channel-form").addEventListener("submit", function(event) {
+        event.preventDefault();
+        let selectedChannel = document.getElementById("channel").value;
+        fetchSong(selectedChannel);
+    });
+
+    document.getElementById("add-to-playlist").addEventListener("click", function() {
+        let songElement = document.getElementById("view-song-spotify");
+        let songUri = songElement.dataset.uri;
+        let playlistId = document.getElementById("playlist-selector").value;
+
+        if (!songUri || songUri === "undefined") {
+            alert("Ingen låt vald eller hittades inte på Spotify!");
+            return;
         }
-    })
-    .catch(error => console.error("Error fetching song:", error));
-}
 
+        if (!playlistId) {
+            alert("Ingen spellista vald!");
+            return;
+        }
 
-document.getElementById("channel-form").addEventListener("submit", function(event) {
-    event.preventDefault();
-    let selectedChannel = document.getElementById("channel").value;
-    fetchSong(selectedChannel);
-});
-
-document.getElementById("add-to-playlist").addEventListener("click", function() {
-    let songElement = document.getElementById("view-song-spotify");
-    let songUri = songElement.dataset.uri;
-    let playlistId = document.getElementById("playlist-selector").value;
-
-    if (!songUri || songUri === "undefined") {  
-        alert("Ingen låt vald eller hittades inte på Spotify!");
-        return;
-    }
-    if (!playlistId) {
-        alert("Ingen spellista vald!");
-        return;
-    }
-
-    fetch("/add-to-playlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ song_uri: songUri, playlist_id: playlistId })
-    }).then(response => response.json())
-    .then(data => alert(data.message || data.error));
-});
-
-
+        fetch(`/playlists/${playlistId}/tracks`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ song_uri: songUri })
+        })
+        .then(response => response.json())
+        .then(data => alert(data.message || data.error));
+    });
 
     fetchUserProfile();
     </script>
