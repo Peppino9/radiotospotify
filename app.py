@@ -8,8 +8,8 @@ import os
 app = Flask(__name__)
 app.secret_key = "secretdeluxe"
 
-SPOTIFY_CLIENT_ID = "c214a3e3850c4821899be00e77de846c"
-SPOTIFY_CLIENT_SECRET = "fa754115a705409487558fd7691cf5f9"
+SPOTIFY_CLIENT_ID = "ClientID"
+SPOTIFY_CLIENT_SECRET = "ClientSecret"
 SPOTIFY_REDIRECT_URI = "http://127.0.0.1:5000/callback"
 SCOPE = "playlist-modify-public playlist-modify-private user-read-private user-top-read user-read-email"
 
