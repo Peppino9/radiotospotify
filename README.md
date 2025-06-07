@@ -26,6 +26,7 @@ Innan du kör projektet behöver du ha följande installerat:
 
 ```bash
 git clone https://github.com/Peppino9/radiotospotify
+cd radiotospotify
 ```
 
 ### 2. Skapa och aktivera en virtuell miljö 
@@ -50,8 +51,10 @@ pip install -r requirements.txt
 ### 4. Miljövariabler
 
 Byt ut `ClientID` och `ClientSecret` med de faktiska API-nycklarna från Spotify Developer Dashboard inne i **app.py**
-`SPOTIFY_CLIENT_ID = "ClientID"`
-`SPOTIFY_CLIENT_SECRET = "ClientSecret"`
+```bash
+SPOTIFY_CLIENT_ID = "ClientID"
+SPOTIFY_CLIENT_SECRET = "ClientSecret"
+```
 
 ### 5. Starta applikationen
 
