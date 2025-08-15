@@ -1,138 +1,212 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Låtinformation</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='body.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Låtinformation</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='body.css') }}">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Låtinformation från Sveriges Radio</h1>
-            <div id="user-info">
-                <img id="user-image" src="" alt="Profilbild">
-                <p id="user-name"></p>
-                <button id="logout-button" style="display: none;">Logga ut</button>
-            </div>
-            <button id="login-button">Logga in med Spotify</button>
-        </header>
-        
-        <main>
-            <form id="channel-form" class="channel-selector">
-                <label for="channel">Välj kanal:</label>
-                <select name="channel_id" id="channel">
-                    {% for channel in channels %}
-                        <option value="{{ channel.id }}">{{ channel.name }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit">Visa</button>
-            </form>
-            
-            <div id="song-info" class="song-info">
-                <h2>Nuvarande låt</h2>
-                <p id="current-song-title"><strong>Titel:</strong> Ingen titel</p>
-                <p id="current-song-artist"><strong>Artist:</strong> Ingen artist</p>
-                <a id="view-song-spotify" class="spotify-link" target="_blank" style="display:none;">Lyssna på Spotify</a>
-            </div>
-
-            <div id="pick-playlist">
-                <h2>Lägg till i din Spotify spellista</h2>
-                <select id="playlist-selector"></select> 
-                <button id="add-to-playlist">Lägg till i spellista</button>
-            </div>
-        </main>
+<div class="container">
+  <header>
+    <h1>Låtinformation från Sveriges Radio</h1>
+    <div id="user-info" style="display:none;">
+      <img id="user-image" src="" alt="Profilbild">
+      <p id="user-name"></p>
+      <button id="logout-button" style="display:none;">Logga ut</button>
     </div>
+    <button id="login-button">Logga in med Spotify</button>
+  </header>
 
-    <form id="login-form" method="POST" action="/sessions" style="display: none;"></form>
+  <main>
+    <form id="channel-form" class="channel-selector">
+      <label for="channel">Välj kanal:</label>
+      <select name="channel_id" id="channel">
+        {% for channel in channels %}
+          <option value="{{ channel.id }}">{{ channel.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Visa</button>
+    </form>
 
-    <script>
-    document.getElementById("login-button").addEventListener("click", function() {
-        document.getElementById("login-form").submit();
+    <div id="song-info" class="song-info">
+      <h2>Nuvarande låt</h2>
+      <p id="current-song-title"><strong>Titel:</strong> Ingen titel</p>
+      <p id="current-song-artist"><strong>Artist:</strong> Ingen artist</p>
+      <a id="view-song-spotify" class="spotify-link" target="_blank" style="display:none;">Lyssna på Spotify</a>
+    </div>
+    <div id="pick-playlist">
+      <h2>Lägg till i din Spotify spellista</h2>
+      <select id="playlist-selector"></select>
+      <button id="add-to-playlist">Lägg till i spellista</button>
+    </div>
+  </main>
+</div>
+
+<script>
+const tokenKey = "spotify_access_token";
+const refreshKey = "spotify_refresh_token";
+const expKey = "spotify_expires_at";
+const userNameKey = "spotify_user_name";
+const userImageKey = "spotify_user_image";
+
+const params = new URLSearchParams(window.location.search);
+if (params.has("spotify_access_token")) {
+  // Spara tokens + profil info
+  localStorage.setItem(tokenKey, params.get("spotify_access_token"));
+  localStorage.setItem(refreshKey, params.get("spotify_refresh_token"));
+  localStorage.setItem(expKey, String(Date.now() + (parseInt(params.get("spotify_expires_at")) * 1000)));
+  localStorage.setItem(userNameKey, params.get("spotify_user_name") || "");
+  localStorage.setItem(userImageKey, params.get("spotify_user_image") || "");
+
+  // Clear query from URL
+  window.history.replaceState({}, document.title, "/");
+
+  // Uppdatera UI 
+  updateAuthUI(true, {
+    name: localStorage.getItem(userNameKey),
+    image: localStorage.getItem(userImageKey)
+  });
+  fetchPlaylists();
+} else if (localStorage.getItem(tokenKey)) {
+  fetchUserProfile();
+} else {
+  updateAuthUI(false);
+}
+
+document.getElementById("login-button").addEventListener("click", () => {
+  window.location = "/oauth/spotify/authorize";
+});
+
+document.getElementById("logout-button").addEventListener("click", () => {
+  localStorage.clear();
+  location.reload();
+});
+
+function getToken() {
+  const token = localStorage.getItem(tokenKey);
+  const exp = Number(localStorage.getItem(expKey) || 0);
+  if (token && Date.now() < exp - 30000) return Promise.resolve(token);
+
+  const refresh = localStorage.getItem(refreshKey);
+  if (!refresh) return Promise.resolve(null);
+
+  return fetch("/oauth/spotify/refresh", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ refresh_token: refresh })
+  }).then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data || !data.access_token) return null;
+      localStorage.setItem(tokenKey, data.access_token);
+      localStorage.setItem(expKey, String(Date.now() + (data.expires_in || 3600)*1000));
+      return data.access_token;
     });
+}
 
-    document.getElementById("logout-button").addEventListener("click", function() {
-        fetch("/sessions", { method: "DELETE" }).then(() => location.reload());
-    });
+function withAuth(init = {}) {
+  return getToken().then(token => {
+    if (!token) return null;
+    init.headers = init.headers || {};
+    init.headers["Authorization"] = "Bearer " + token;
+    return init;
+  });
+}
 
-    function fetchUserProfile() {
-        fetch("/users/me")
-        .then(response => response.json())
-        .then(user => {
-            if (user.authenticated) {
-                document.getElementById("user-info").style.display = "block";
-                document.getElementById("user-name").innerText = user.name;
-                document.getElementById("logout-button").style.display = "inline-block";
-                document.getElementById("login-button").style.display = "none";
-                document.getElementById("user-image").src = user.image || "/static/default-profile.png";
-                fetchPlaylists();
-            }
-        });
+function updateAuthUI(authenticated, user = {}) {
+  document.getElementById("user-info").style.display = authenticated ? "block" : "none";
+  document.getElementById("login-button").style.display = authenticated ? "none" : "inline-block";
+  document.getElementById("logout-button").style.display = authenticated ? "inline-block" : "none";
+  document.getElementById("pick-playlist").style.display = authenticated ? "inline-block" : "none";
+  if (authenticated) {
+    document.getElementById("user-name").innerText = user.name || "";
+    document.getElementById("user-image").src = user.image || "/static/default-profile.png";
+  }
+}
+
+function fetchUserProfile() {
+  return withAuth().then(init => {
+    if (!init) {
+      updateAuthUI(false);
+      return;
     }
-
-    function fetchPlaylists() {
-        fetch("/users/me/playlists")
-        .then(response => response.json())
-        .then(playlists => {
-            let selector = document.getElementById("playlist-selector");
-            selector.innerHTML = "";
-            playlists.forEach(playlist => {
-                let option = document.createElement("option");
-                option.value = playlist.id;
-                option.textContent = playlist.name;
-                selector.appendChild(option);
-            });
-        });
-    }
-
-    function fetchSong(channelId) {
-        fetch(`/channels/${channelId}/current-song`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("current-song-title").innerHTML = `<strong>Titel:</strong> ${data.title}`;
-            document.getElementById("current-song-artist").innerHTML = `<strong>Artist:</strong> ${data.artist}`;
-            let songLink = document.getElementById("view-song-spotify");
-            if (data.song_url) {
-                songLink.style.display = "inline-block";
-                songLink.href = data.song_url;
-                songLink.dataset.uri = data.song_url;
-            } else {
-                songLink.style.display = "none";
-            }
-        });
-    }
-
-    document.getElementById("channel-form").addEventListener("submit", function(event) {
-        event.preventDefault();
-        let selectedChannel = document.getElementById("channel").value;
-        fetchSong(selectedChannel);
-    });
-
-    document.getElementById("add-to-playlist").addEventListener("click", function() {
-        let songElement = document.getElementById("view-song-spotify");
-        let songUri = songElement.dataset.uri;
-        let playlistId = document.getElementById("playlist-selector").value;
-
-        if (!songUri || songUri === "undefined") {
-            alert("Ingen låt vald eller hittades inte på Spotify!");
-            return;
+    fetch("/users/me", init)
+      .then(r => r.ok ? r.json() : { authenticated:false })
+      .then(user => {
+        if (user && user.authenticated) {
+          localStorage.setItem(userNameKey, user.name || "");
+          localStorage.setItem(userImageKey, user.image || "");
+          updateAuthUI(true, user);
+          fetchPlaylists();
+        } else {
+          updateAuthUI(false);
         }
+      });
+  });
+}
 
-        if (!playlistId) {
-            alert("Ingen spellista vald!");
-            return;
+function fetchPlaylists() {
+  return withAuth().then(init => {
+    if (!init) return;
+    fetch("/users/me/playlists", init)
+      .then(r => r.ok ? r.json() : [])
+      .then(playlists => {
+        const selector = document.getElementById("playlist-selector");
+        selector.innerHTML = "";
+        (playlists || []).forEach(pl => {
+          const opt = document.createElement("option");
+          opt.value = pl.id;
+          opt.textContent = pl.name;
+          selector.appendChild(opt);
+        });
+      });
+  });
+}
+
+function fetchSong(channelId) {
+  return withAuth().then(init =>
+    fetch(`/channels/${channelId}/current-song`, init)
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById("current-song-title").innerHTML = `<strong>Titel:</strong> ${data.title}`;
+        document.getElementById("current-song-artist").innerHTML = `<strong>Artist:</strong> ${data.artist}`;
+        const link = document.getElementById("view-song-spotify");
+        if (data.song_url) {
+          link.style.display = "inline-block";
+          link.href = data.song_url;
+          link.dataset.uri = data.song_url;
+        } else {
+          link.style.display = "none";
+          link.removeAttribute("data-uri");
         }
+      })
+  );
+}
 
-        fetch(`/playlists/${playlistId}/tracks`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ song_uri: songUri })
-        })
-        .then(response => response.json())
-        .then(data => alert(data.message || data.error));
-    });
+document.getElementById("channel-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const id = document.getElementById("channel").value;
+  fetchSong(id);
+});
 
-    fetchUserProfile();
-    </script>
+document.getElementById("add-to-playlist").addEventListener("click", () => {
+  const songUri = document.getElementById("view-song-spotify").dataset.uri;
+  const playlistId = document.getElementById("playlist-selector").value;
+  if (!songUri) return alert("Ingen låt vald eller hittades inte på Spotify!");
+  if (!playlistId) return alert("Ingen spellista vald!");
+
+  withAuth({
+    method: "PATCH",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ song_uri: songUri })
+  }).then(init =>
+    fetch(`/playlists/${playlistId}/tracks`, init)
+      .then(r => r.json())
+      .then(data => alert(data.message || data.error || "Ok"))
+  );
+});
+
+fetchUserProfile();
+</script>
 </body>
 </html>

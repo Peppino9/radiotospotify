@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, jsonify, url_for
 import requests
 import xml.etree.ElementTree as ET
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-import os
 
 app = Flask(__name__)
 app.secret_key = "secretdeluxe"
@@ -24,174 +23,160 @@ CHANNELS = [
     {"id": "2576", "name": "Din Gata"},
 ]
 
-def _make_spotify_oauth():
-    user_id = session.get("user_id")
-    cache_path = f".cache-{user_id}" if user_id else ".cache-temp"
+def make_oauth():
     return SpotifyOAuth(
         client_id=SPOTIFY_CLIENT_ID,
         client_secret=SPOTIFY_CLIENT_SECRET,
         redirect_uri=SPOTIFY_REDIRECT_URI,
         scope=SCOPE,
-        cache_path=cache_path
+        cache_path=None
     )
 
-@app.route('/')
+def spotify_from_request():
+    # Spotify client från Authorization, access token header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None, ("Missing or invalid Authorization header", 401)
+    token = auth_header.split(" ", 1)[1].strip()
+    if not token:
+        return None, ("Missing access token", 401)
+    sp = spotipy.Spotify(auth=token)
+    try:
+        sp.current_user()
+    except spotipy.exceptions.SpotifyException:
+        return None, ("Invalid or expired token", 401)
+    return sp, None
+
+@app.route("/")
 def home():
     return render_template("main.html", channels=CHANNELS)
 
-#Log in - skapa session
-@app.route('/sessions', methods=['POST'])
-def create_session():
-    spotify_oauth = _make_spotify_oauth()
-    auth_url = spotify_oauth.get_authorize_url() + "&show_dialog=True"
-    return redirect(auth_url)
+@app.route("/oauth/spotify/authorize")
+def oauth_authorize():
+    url = make_oauth().get_authorize_url() + "&show_dialog=True"
+    return redirect(url, code=302)
 
-#Log Out - clear session
-@app.route('/sessions', methods=['DELETE'])
-def delete_session():
-    user_id = session.get("user_id")
-    session.clear()
-    if user_id:
-        try:
-            os.remove(f".cache-{user_id}")
-        except FileNotFoundError:
-            pass
-    try:
-        os.remove(".cache-temp")
-    except FileNotFoundError:
-        pass
-    return '', 204
-
-@app.route('/callback')
-def callback():
-    if request.args.get("error"):
-        return redirect(url_for("home"))
+@app.route("/callback")
+def oauth_callback():
+    error = request.args.get("error")
+    if error:
+        return redirect("/")
+    
     code = request.args.get("code")
     if not code:
-        return redirect(url_for("home"))
+        return redirect("/")
 
-    temp_oauth = _make_spotify_oauth()
-    token_info = temp_oauth.get_access_token(code)
-    session["token_info"] = token_info
+    token_info = make_oauth().get_access_token(code)
+    access_token = token_info.get("access_token", "")
+    refresh_token = token_info.get("refresh_token", "")
+    expires_in = int(token_info.get("expires_in", 0))
 
-    spotify_client = spotipy.Spotify(auth=token_info["access_token"])
-    user_info = spotify_client.me()
-    user_id = user_info["id"]
+    sp = spotipy.Spotify(auth=access_token)
+    me = sp.me()
 
-    try:
-        os.rename(".cache-temp", f".cache-{user_id}")
-    except FileNotFoundError:
-        pass
-
-    session["user_id"] = user_id
-    session["user"] = {
-        "name": user_info.get("display_name"),
-        "image": user_info.get("images")[0]["url"] if user_info.get("images") else None
-    }
-
-    return redirect(url_for("home"))
-
-@app.route('/users/me')
-def user_profile():
-    user = session.get("user", {})
-    if not user:
-        return jsonify({"authenticated": False})
-    return jsonify({**user, "authenticated": True})
-
-def get_spotify_client():
-    user_id = session.get("user_id")
-    if not user_id:
-        return None
-
-    cache_path = f".cache-{user_id}"
-    spotify_oauth = SpotifyOAuth(
-        client_id=SPOTIFY_CLIENT_ID,
-        client_secret=SPOTIFY_CLIENT_SECRET,
-        redirect_uri=SPOTIFY_REDIRECT_URI,
-        scope=SCOPE,
-        cache_path=cache_path
+    return redirect(
+        url_for(
+            "home",
+             spotify_access_token=access_token,
+            spotify_refresh_token=refresh_token,
+            spotify_expires_at=expires_in,
+            spotify_user=me.get("id")
+        )
     )
 
-    token_info = spotify_oauth.get_cached_token()
-    if not token_info:
-        return None
 
-    if spotify_oauth.is_token_expired(token_info):
-        try:
-            token_info = spotify_oauth.refresh_access_token(token_info["refresh_token"])
-        except Exception:
-            session.clear()
-            return None
 
-    return spotipy.Spotify(auth=token_info["access_token"])
+@app.route("/oauth/spotify/refresh", methods=["POST"])
+def oauth_refresh():
+    data = request.get_json(force=True, silent=True) or {}
+    refresh_token = data.get("refresh_token")
+    if not refresh_token:
+        return jsonify({"error": "refresh_token is required"}), 400
+    try:
+        token_info = make_oauth().refresh_access_token(refresh_token)
+        return jsonify({
+            "access_token": token_info.get("access_token"),
+            "expires_in": token_info.get("expires_in"),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
-#  Hämtar & visar användarens spellista
-@app.route('/users/me/playlists')
-def user_playlists():
-    spotify = get_spotify_client()
-    if not spotify:
-        return jsonify([])
+@app.route("/users/me", methods=["GET"])
+def users_me():
+    sp, err = spotify_from_request()
+    if err:
+        msg, code = err
+        return jsonify({"error": msg}), code
 
-    playlists = spotify.current_user_playlists()
-    return jsonify(playlists["items"])
+    me = sp.me()
+    return jsonify({
+        "name": me.get("display_name"),
+        "image": (me.get("images") or [{}])[0].get("url"),
+        "id": me.get("id"),
+        "authenticated": True
+    })
 
-# Lägger till låt i användares spellistor
-@app.route('/playlists/<playlist_id>/tracks', methods=['PATCH'])
-def add_track_to_playlist(playlist_id):
-    spotify = get_spotify_client()
-    if not spotify:
-        return jsonify({"error": "User not authenticated"}), 401
 
-    data = request.json
+# Hämtar & visar användarens spellista
+@app.route("/users/me/playlists", methods=["GET"])
+def users_playlists():
+    sp, err = spotify_from_request()
+    if err:
+        msg, code = err
+        return jsonify([]), code
+    playlists = sp.current_user_playlists()
+    return jsonify(playlists.get("items", []))
+
+# Lägg till låt i använderens spellistor
+@app.route("/playlists/<playlist_id>/tracks", methods=["PATCH"])
+def add_track(playlist_id):
+    sp, err = spotify_from_request()
+    if err:
+        msg, code = err
+        return jsonify({"error": msg}), code
+    data = request.get_json(force=True, silent=True) or {}
     track_uri = data.get("song_uri")
     if not track_uri:
-        return jsonify({"error": "Missing song URI"}), 400
-
+        return jsonify({"error": "Missing song_uri"}), 400
     try:
-        spotify.playlist_add_items(playlist_id, [track_uri])
+        sp.playlist_add_items(playlist_id, [track_uri])
         return jsonify({"message": "Song added to playlist!"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 # Sök efter låt på spotify
-def search_spotify(query):
-    spotify = get_spotify_client()
-    if not spotify:
+def search_spotify(sp, query):
+    try:
+        result = sp.search(q=query, type="track", limit=1)
+        items = result.get("tracks", {}).get("items", [])
+        if not items:
+            return None
+        uri = items[0]["uri"]
+        return f"https://open.spotify.com/track/{uri.split(':')[-1]}"
+    except Exception:
         return None
-
-    result = spotify.search(q=query, type="track", limit=1)
-    tracks = result.get("tracks", {}).get("items", [])
-    if not tracks:
-        return None
-
-    song_uri = tracks[0]["uri"]
-    song_url = f"https://open.spotify.com/track/{song_uri.split(':')[-1]}"
-    return {"spotify_url": song_url}
 
 # Hämtar spelad låt från Sveriges Radio
-@app.route('/channels/<channel_id>/current-song')
+@app.route("/channels/<channel_id>/current-song", methods=["GET"])
 def current_song(channel_id):
     try:
-        response = requests.get(PLAYLIST_API_URL.format(channel_id=channel_id), timeout=5)
-        if response.status_code != 200:
-            return jsonify({"error": "Failed to fetch song data"}), 500
+        r = requests.get(PLAYLIST_API_URL.format(channel_id=channel_id), timeout=5)
+        if r.status_code != 200:
+            return jsonify({"error": "Failed to fetch song data"}), 502
 
-        root = ET.fromstring(response.content)
-        current_song = root.find(".//song")
-        title = current_song.find("title").text if current_song is not None and current_song.find("title") is not None else "Ingen titel"
-        artist = current_song.find("artist").text if current_song is not None and current_song.find("artist") is not None else "Ingen artist"
+        root = ET.fromstring(r.content)
+        song = root.find(".//song")
+        title = song.find("title").text if song is not None and song.find("title") is not None else "Ingen titel"
+        artist = song.find("artist").text if song is not None and song.find("artist") is not None else "Ingen artist"
 
-        spotify_result = search_spotify(f"{title} {artist}")
-        spotify_url = spotify_result["spotify_url"] if spotify_result else None
+        sp, err = spotify_from_request()
+        spotify_url = None
+        if not err:
+            spotify_url = search_spotify(sp, f"{title} {artist}")
 
+        return jsonify({"title": title, "artist": artist, "song_url": spotify_url})
     except Exception as e:
         return jsonify({"error": f"Error processing request: {e}"}), 500
 
-    return jsonify({
-        "title": title,
-        "artist": artist,
-        "song_url": spotify_url
-    })
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
