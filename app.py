@@ -29,6 +29,7 @@ def make_oauth():
         client_secret=SPOTIFY_CLIENT_SECRET,
         redirect_uri=SPOTIFY_REDIRECT_URI,
         scope=SCOPE,
+        cache_path=None
     )
 
 def spotify_from_request():
@@ -65,9 +66,7 @@ def oauth_callback():
     if not code:
         return redirect("/")
 
-    oauth = make_oauth()
-    token_info = oauth.get_access_token(code, check_cache=False, as_dict=True)
-
+    token_info = make_oauth().get_access_token(code)
     access_token = token_info.get("access_token", "")
     refresh_token = token_info.get("refresh_token", "")
     expires_in = int(token_info.get("expires_in", 0))
@@ -78,7 +77,7 @@ def oauth_callback():
     return redirect(
         url_for(
             "home",
-            spotify_access_token=access_token,
+             spotify_access_token=access_token,
             spotify_refresh_token=refresh_token,
             spotify_expires_at=expires_in,
             spotify_user=me.get("id")
