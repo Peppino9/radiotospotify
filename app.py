@@ -3,8 +3,10 @@ import requests
 import xml.etree.ElementTree as ET
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True, origins=["https://app.swaggerhub.com"])
 app.secret_key = "secretdeluxe"
 
 SPOTIFY_CLIENT_ID = "ClientID"
@@ -89,6 +91,7 @@ def oauth_callback():
 
 
 @app.route("/oauth/spotify/refresh", methods=["POST"])
+@cross_origin(supports_credentials=True)
 def oauth_refresh():
     data = request.get_json(force=True, silent=True) or {}
     refresh_token = data.get("refresh_token")
@@ -104,6 +107,7 @@ def oauth_refresh():
         return jsonify({"error": str(e)}), 400
 
 @app.route("/users/me", methods=["GET"])
+@cross_origin(supports_credentials=True)
 def users_me():
     sp, err = spotify_from_request()
     if err:
@@ -121,6 +125,7 @@ def users_me():
 
 # Hämtar & visar användarens spellista
 @app.route("/users/me/playlists", methods=["GET"])
+@cross_origin(supports_credentials=True)
 def users_playlists():
     sp, err = spotify_from_request()
     if err:
@@ -131,6 +136,7 @@ def users_playlists():
 
 # Lägg till låt i använderens spellistor
 @app.route("/playlists/<playlist_id>/tracks", methods=["PATCH"])
+@cross_origin(supports_credentials=True)
 def add_track(playlist_id):
     sp, err = spotify_from_request()
     if err:
@@ -160,6 +166,7 @@ def search_spotify(sp, query):
 
 # Hämtar spelad låt från Sveriges Radio
 @app.route("/channels/<channel_id>/current-song", methods=["GET"])
+@cross_origin(supports_credentials=True)
 def current_song(channel_id):
     try:
         r = requests.get(PLAYLIST_API_URL.format(channel_id=channel_id), timeout=5)
